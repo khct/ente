@@ -1082,9 +1082,20 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  bool _filterMatchAll(List<String> values, String haystack) {
+    haystack = haystack.toLowerCase();
+    for (final val in values) {
+      if (haystack.contains(val) == false) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   void _applyFilteringAndRefresh() {
     if (_searchText.isNotEmpty && _showSearchBox && _allCodes != null) {
-      final String val = _searchText.toLowerCase();
+      final String val = _searchText.toLowerCase().trim();
+      final List<String> values = val.split(RegExp(r'\s+'));
       // Prioritize issuer match above account for better UX while searching
       // for a specific TOTP for email providers. Searching for "emailProvider" like (gmail, proton) should
       // show the email provider first instead of other accounts where protonmail
@@ -1101,11 +1112,11 @@ class _HomePageState extends State<HomePage> {
           continue;
         }
 
-        if (codeState.issuer.toLowerCase().contains(val)) {
+        if (_filterMatchAll(codeState.issuer, values)) {
           issuerMatch.add(codeState);
-        } else if (codeState.account.toLowerCase().contains(val)) {
+        } else if (_filterMatchAll(codeState.account, values)) {
           accountMatch.add(codeState);
-        } else if (codeState.note.toLowerCase().contains(val)) {
+        } else if (_filterMatchAll(codeState.note, values)) {
           noteMatch.add(codeState);
         }
       }
