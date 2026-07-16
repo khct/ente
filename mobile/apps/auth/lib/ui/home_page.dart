@@ -1082,10 +1082,25 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  bool _filterMatchAll(List<String> values, String haystack) {
-    haystack = haystack.toLowerCase();
+  bool _filterMatchAll(List<String> values, String text) {
     for (final val in values) {
-      if (haystack.contains(val) == false) {
+      if (text.contains(val) == false) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _filterMatchAllInAny(List<String> values, List<String> texts) {
+    for (final val in values) {
+      bool match = false;
+      for (final text in texts) {
+        if (text.contains(val)) {
+          match = true;
+          break;
+        }
+      }
+      if (match == false) {
         return false;
       }
     }
@@ -1103,6 +1118,7 @@ class _HomePageState extends State<HomePage> {
       final List<Code> issuerMatch = [];
       final List<Code> accountMatch = [];
       final List<Code> noteMatch = [];
+      final List<Code> anyMatch = [];
 
       for (final Code codeState in _allCodes!) {
         if (codeState.hasError ||
@@ -1111,18 +1127,23 @@ class _HomePageState extends State<HomePage> {
             (codeState.isTrashed != _isTrashOpen)) {
           continue;
         }
-
-        if (_filterMatchAll(codeState.issuer, values)) {
+        final issuer = codeState.issuer.toLowerCase();
+        final account = codeState.account.toLowerCase();
+        final note = codeState.note.toLowerCase();
+        if (_filterMatchAll(values, issuer)) {
           issuerMatch.add(codeState);
-        } else if (_filterMatchAll(codeState.account, values)) {
+        } else if (_filterMatchAll(values, account)) {
           accountMatch.add(codeState);
-        } else if (_filterMatchAll(codeState.note, values)) {
+        } else if (_filterMatchAll(values, note)) {
           noteMatch.add(codeState);
+        } else if (_filterMatchAllInAny(values, [issuer, account, note])) {
+          anyMatch.add(codeState);
         }
       }
       _filteredCodes = issuerMatch;
       _filteredCodes.addAll(accountMatch);
       _filteredCodes.addAll(noteMatch);
+      _filteredCodes.addAll(anyMatch);
     } else if (_isTrashOpen) {
       _filteredCodes = _allCodes
               ?.where(
